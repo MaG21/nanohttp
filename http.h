@@ -40,14 +40,14 @@ extern "C" {
  *  header - handle an HTTP header key/value pair
  *  code - handle the HTTP status code for the response
  */
-struct http_funcs {
+typedef struct http_funcs {
     void* (*realloc_scratch)(void* opaque, void* ptr, int size);
     void (*body)(void* opaque, const char* data, int size);
     void (*header)(void* opaque, const char* key, int nkey, const char* value, int nvalue);
     void (*code)(void* opqaue, int code);
-};
+} http_funcs;
 
-struct http_roundtripper {
+typedef struct http_roundtripper {
     struct http_funcs funcs;
     void *opaque;
     char *scratch;
@@ -59,7 +59,7 @@ struct http_roundtripper {
     int nkey;
     int nvalue;
     int chunked;
-};
+} http_roundtripper;
 
 /**
  * Initializes a rountripper with the specified response functions. This must
