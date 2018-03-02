@@ -24,12 +24,49 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef HTTP_HTTP_H
-#define HTTP_HTTP_H
+#ifndef HTTP_H
+#define HTTP_H
+
+#include <ctype.h>
+#include <string.h>
 
 #if defined(__cplusplus)
 extern "C" {
 #endif
+
+/**
+ * Parses the size out of a chunk-encoded HTTP response. Returns non-zero if it
+ * needs more data. Retuns zero success or error. When error: size == -1 On
+ * success, size = size of following chunk data excluding trailing \r\n. User is
+ * expected to process or otherwise seek past chunk data up to the trailing
+ * \r\n. The state parameter is used for internal state and should be
+ * initialized to zero the first call.
+ */
+int http_parse_chunked(int* state, int *size, char ch);
+
+enum http_header_status
+{
+    http_header_status_done,
+    http_header_status_continue,
+    http_header_status_version_character,
+    http_header_status_code_character,
+    http_header_status_status_character,
+    http_header_status_key_character,
+    http_header_status_value_character,
+    http_header_status_store_keyvalue
+};
+
+/**
+ * Parses a single character of an HTTP header stream. The state parameter is
+ * used as internal state and should be initialized to zero for the first call.
+ * Return value is a value from the http_header_status enuemeration specifying
+ * the semantics of the character. If an error is encountered,
+ * http_header_status_done will be returned with a non-zero state parameter. On
+ * success http_header_status_done is returned with the state parameter set to
+ * zero.
+ */
+int http_parse_header_char(int* state, char ch);
+
 
 /**
  * Callbacks for handling response data.
