@@ -35,8 +35,6 @@
 #include <unistd.h>
 #include <errno.h>
 
-#include "header.h"
-#include "chunk.h"
 #include "http.h"
 
 #define TRUE  1
@@ -45,7 +43,6 @@
 extern int errno;
 
 typedef struct HttpResponse {
-	char body[5120];
 	int code;
 	size_t size;
 } HttpResponse;
@@ -87,105 +84,112 @@ connectsocket(const char* host, int port)
 
 static void* response_realloc(void* opaque, void* ptr, int size)
 {
-    return realloc(ptr, size);
+	return realloc(ptr, size);
 }
 
-static void
+	static void
 response_body(void* opaque, const char* data, int size)
 {
-    HttpResponse* response = (HttpResponse*)opaque;
-    printf("DATA: %d\n", size);
-    memcpy(&response->body[size], data, size);
-    response->size += size;
+	char *tmp;
+	HttpResponse* response = (HttpResponse*)opaque;
+
+	tmp = malloc(sizeof(char)*size + 1);
+	strncpy(&tmp[0], data, size);
+
+	printf("%s\n", tmp);
+	free(tmp);
+
+	response->size += size;
 }
 
-static void
+	static void
 response_header(void* opaque, const char* key, int key_size, const char* value, int value_size)
 {
 	int ret;
 	char buf[1024];
-	ret = snprintf(buf, 1023, "%s:%s\n", key, value);
 
-	buf[ret] = 0;
-	puts(buf);
+	strncpy(&buf[0], key, key_size);
+
+	printf("%s: ", buf);
+
+	strncpy(&buf[0], value, value_size);
+	printf("%s\n", buf);
 }
 
 static void response_code(void* opaque, int code)
 {
-    HttpResponse* response = (HttpResponse*)opaque;
-    response->code = code;
+	HttpResponse* response = (HttpResponse*)opaque;
+	response->code = code;
 }
 
 static const http_funcs responseFuncs = {
-    response_realloc,
-    response_body,
-    response_header,
-    response_code,
+	response_realloc,
+	response_body,
+	response_header,
+	response_code,
 };
 
 int
-main()
+main(int argc, char *argv[])
 {
 
-    int read;
-    int ndata;
-    int needmore = TRUE;
-    char* data;
-    char buffer[1024];
-    HttpResponse response;
-    http_roundtripper rt;
+	int read;
+	int ndata;
+	int needmore = TRUE;
+	char* data;
+	char buffer[1024];
+	HttpResponse response = {0};
+	http_roundtripper rt;
 
-    int conn = connectsocket("api.yomomma.info", 80);
-    if (conn < 0) {
-        fprintf(stderr, "Failed to connect socket\n");
-        return -1;
-    }
+	int conn = connectsocket("api.yomomma.info", 80);
+	if (conn < 0) {
+		fprintf(stderr, "Failed to connect socket\n");
+		return -1;
+	}
 
-    const char request[] = "GET /rates HTTP/1.0\r\nHost: api.yomomma.info\r\n\r\n";
-    int len = send(conn, request, sizeof(request) - 1, 0);
-    if (len != sizeof(request) - 1) {
-        fprintf(stderr, "Failed to send request\n");
-        close(conn);
-        return -1;
-    }
+	const char request[] = "GET / HTTP/1.1\r\nConnection: close\r\nHost: api.yomomma.info\r\n\r\n";
+	int len = send(conn, request, sizeof(request) - 1, 0);
+	if (len != sizeof(request) - 1) {
+		fprintf(stderr, "Failed to send request\n");
+		close(conn);
+		return -1;
+	}
 
-    response.code = 0;
-    response.size = 0;
+	response.code = 0;
+	response.size = 0;
 
-    http_init(&rt, responseFuncs, &response);
+	http_init(&rt, responseFuncs, &response);
 
-    while (needmore) {
-        data = buffer;
+	while (needmore) {
+		data = buffer;
 
-        ndata = recv(conn, buffer, sizeof(buffer), 0);
+		ndata = recv(conn, buffer, sizeof(buffer), 0);
 
-        if (ndata <= 0) {
-            http_free(&rt);
-            close(conn);
-            return -1;
-        }
+		if (ndata <= 0) {
+			http_free(&rt);
+			close(conn);
+			return -1;
+		}
 
-        while (needmore && ndata) {
-            needmore = http_data(&rt, data, ndata, &read);
-            ndata -= read;
-            data += read;
-        }
-    }
+		while (needmore && ndata) {
+			needmore = http_data(&rt, data, ndata, &read);
+			ndata -= read;
+			data += read;
+		}
+	}
 
-    if (http_iserror(&rt)) {
-        fprintf(stderr, "Error parsing data\n");
-        http_free(&rt);
-        close(conn);
-        return -1;
-    }
+	if (http_iserror(&rt)) {
+		fprintf(stderr, "Error parsing data\n");
+		http_free(&rt);
+		close(conn);
+		return -1;
+	}
 
-    http_free(&rt);
-    close(conn);
+	http_free(&rt);
+	close(conn);
 
-    printf("Response: %d\n", response.code);
-    if (response.size)
-	    response.body[response.size] = 0;
-        printf("%s\n", &response.body[0]);
+	printf("RES. CODE: %d\n", response.code);
+	printf("RES. SIZE: %zd\n", response.size);
 
-    return 0;
+	return 0;
 }
