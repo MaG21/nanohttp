@@ -135,13 +135,13 @@ main()
     HttpResponse response;
     http_roundtripper rt;
 
-    int conn = connectsocket("api.marcos.do", 80);
+    int conn = connectsocket("api.yomomma.info", 80);
     if (conn < 0) {
         fprintf(stderr, "Failed to connect socket\n");
         return -1;
     }
 
-    const char request[] = "GET /rates HTTP/1.0\r\nHost: api.marcos.do\r\n\r\n";
+    const char request[] = "GET /rates HTTP/1.0\r\nHost: api.yomomma.info\r\n\r\n";
     int len = send(conn, request, sizeof(request) - 1, 0);
     if (len != sizeof(request) - 1) {
         fprintf(stderr, "Failed to send request\n");
