@@ -1,5 +1,0 @@
-language: c
-compiler:
-  - gcc
-  - clang
-script: gcc -c *.c -std=c89 -Wall -Werror
