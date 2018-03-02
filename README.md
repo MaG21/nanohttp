@@ -9,6 +9,8 @@ dependencies:
 * `<string.h> - strncmp`
 
 Honestly, this can be improved. If I need to, I'll be performing house keeping.
+
+
 Compiling
 ---------
 $ make
