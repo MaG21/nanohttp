@@ -1,6 +1,6 @@
 nano
 ========
-Lightweight http parser implementation. nanohttp is a fork from mensley's tinyhttp but it has a working example, a Makefile and the source code minified withing two files.
+Lightweight http parser implementation. nanohttp is a fork from mensley's tinyhttp but it has a working example, a Makefile and two (2) source files (http.c, http.h)
 
 dependencies:
 
